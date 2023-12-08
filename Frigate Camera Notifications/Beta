@@ -1104,8 +1104,8 @@ action:
                     minutes: 2
                   continue_on_timeout: false
                 - variables:
-                    amblegpt_message: "{{ event['after']['summary'] }}"
-                    amblegpt_title: "{{ event['after']['summary_title'] }}"
+                    amblegpt_message: "{{ event['after']['description'] }}"
+                    amblegpt_title: "{{ event['after']['title'] }}"
                     event: "{{ wait.trigger.payload_json }}"
                     loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                     new_snapshot: "{{ update_thumbnail and event['before']['snapshot_time'] != event['after']['snapshot_time'] }}"
@@ -1159,6 +1159,7 @@ action:
                       {%else%}
                         {{title}}
                       {%endif%}
+                    message_changed: "{{ (true if amblegpt_message else false) or (true if amblegpt_title else false) }}" 
                     custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
                   choose:
@@ -1180,7 +1181,9 @@ action:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop): 
-                                Info: 
+                                Info:
+                                  AmbleGPT Message: {{ amblegpt_message }},
+                                  AmbleGPT Title: {{ amblegpt_title }},
                                   GPT Message: {{ gpt_message }},
                                   GPT Title: {{ gpt_title }},
                                   Last Zones: {{last_zones}}, 
@@ -1196,7 +1199,8 @@ action:
                                   Presence Changed: {{presence_changed}}, 
                                   stationary moved: {{stationary_moved}}, 
                                   entered zones changed: {{entered_zones_changed}}, 
-                                  sublabel changed: {{sub_label_changed}}, 
+                                  sublabel changed: {{sub_label_changed}},
+                                  message_changed: {{ message_changed }},
                                 Conditions: 
                                   Loitering: {{loitering}}
                                     or 
@@ -1210,11 +1214,11 @@ action:
                   choose:
                     - conditions:
                         - "{{ custom_action_auto_multi | length > 0 }}"
-                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed or message_changed )) }}"
                       sequence: !input "custom_action_auto_multi"
                 - alias: "Notify on loitering or significant change"
                   choose:
-                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed or message_changed )) }}"
                       sequence:
                         - choose:
                             - conditions: "{{ not notify_group_target }}"
