@@ -1104,6 +1104,8 @@ action:
                     minutes: 2
                   continue_on_timeout: false
                 - variables:
+                    amblegpt_message: "{{ event['after']['summary'] }}"
+                    amblegpt_title: "{{ event['after']['summary_title'] }}"
                     event: "{{ wait.trigger.payload_json }}"
                     loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                     new_snapshot: "{{ update_thumbnail and event['before']['snapshot_time'] != event['after']['snapshot_time'] }}"
@@ -1145,8 +1147,18 @@ action:
                       {%else%}
                         {{message}}
                       {%endif%}
-                    gpt_message: "{{ event['after']['summary'] | message }}"
-                    gpt_title: "{{ event['after']['summary_title'] | title }}"
+                    gpt_message: >
+                      {% if amblegpt_message %}
+                        {{amblegpt_message}}
+                      {%else%}
+                        {{message}}
+                      {%endif%}
+                    gpt_title: >
+                      {% if amblegpt_title %} 
+                        {{amblegpt_title}}
+                      {%else%}
+                        {{title}}
+                      {%endif%}
                     custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
                   choose:
