@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.3)
+  name: Frigate Notifications - AmbleGPT (0.12.0.3)
   description: |
     ## Frigate Notifications
 
@@ -111,6 +111,10 @@ blueprint:
       name: MQTT Topic (Advanced)
       description: The MQTT topic frigate sends messages in.
       default: frigate/events
+    amblegpt_mqtt_topic:
+      name: AmbleGPT MQTT Topic (Advanced)
+      description: The MQTT topic AmbleGPT sends messages in.
+      default: amblegpt/events
     client_id:
       name: Client ID (Optional-Advanced)
       description: Used to support multiple instances of Frigate. Leave blank if you don't know what to do.
@@ -1141,6 +1145,8 @@ action:
                       {%else%}
                         {{message}}
                       {%endif%}
+                    gpt_message: "{{ event['after']['summary'] | message }}"
+                    gpt_title: "{{ event['after']['summary_title'] | title }}"
                     custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
                   choose:
@@ -1163,6 +1169,8 @@ action:
                             message: |
                               DEBUG (in loop): 
                                 Info: 
+                                  GPT Message: {{ gpt_message }},
+                                  GPT Title: {{ gpt_title }},
                                   Last Zones: {{last_zones}}, 
                                   Current zones: {{enteredzones}}, 
                                   sublabel: {{sub_label}}, 
@@ -1202,8 +1210,8 @@ action:
                                 - device_id: !input notify_device
                                   domain: mobile_app
                                   type: notify
-                                  title: "{{title}}"
-                                  message: "{{message}}"
+                                  title: "{{gpt_title}}"
+                                  message: "{{gpt_message}}"
                                   data:
                                     tag: "{{ id }}{{'-loitering' if loitering}}"
                                     group: "{{ group }}"
@@ -1248,8 +1256,8 @@ action:
                               sequence:
                                 - service: "notify.{{ notify_group_target }}"
                                   data:
-                                    title: "{{title}}"
-                                    message: "{{message}}"
+                                    title: "{{gpt_title}}"
+                                    message: "{{gpt_message}}"
                                     data:
                                       tag: "{{ id }}{{'-loitering' if loitering}}"
                                       group: "{{ group }}"
@@ -1301,8 +1309,8 @@ action:
                           default:
                             - service: "notify.{{ notify_group_target }}"
                               data:
-                                title: "{{title}}"
-                                message: "{{message}}"
+                                title: "{{gpt_title}}"
+                                message: "{{gpt_message}}"
                                 data:
                                   tag: "{{ id }}{{'-loitering' if loitering}}"
                                   group: "{{ group }}"
